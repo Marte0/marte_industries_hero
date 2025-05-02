@@ -4,17 +4,15 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 
-// Funzione di linear interpolation (lerp)
 function lerp(start, end, t) {
   return start + (end - start) * t;
 }
 
-// Shader Pixel Art migliorato
 const PixelShader = {
   uniforms: {
     tDiffuse: { value: null },
     resolution: { value: new THREE.Vector2() },
-    pixelSize: { value: 8.0 },
+    pixelSize: { value: 0.5 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -37,41 +35,35 @@ const PixelShader = {
       vec2 dxy = pixelSize / resolution;
       vec2 coord = dxy * floor(vUv / dxy);
       vec4 color = texture2D(tDiffuse, coord);
-
       if (color.a < 0.5) discard;
-
       color.rgb = toSRGB(color.rgb);
       gl_FragColor = color;
     }
   `,
 };
 
-// Crea scena e camera
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 25;
 
-// Renderer senza antialiasing
 const renderer = new THREE.WebGLRenderer({
   canvas: document.getElementById("webgl"),
+  alpha: true,
   antialias: false,
 });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xffffff);
+renderer.setClearColor(0x000000, 0);
 
-// Variabili globali
 let model;
 let targetQuaternion = new THREE.Quaternion();
 const smoothLookAt = new THREE.Vector3();
 let pallina, pallaArancione;
 let targetPallinaPosition = new THREE.Vector3();
-let particles = []; // Particelle array
+let particles = [];
 
-// Caricamento texture
 const textureLoader = new THREE.TextureLoader();
 
-// Palla arancione
 const backgroundTexture = textureLoader.load("palla_arancione.png", (texture) => {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.NearestFilter;
@@ -80,9 +72,9 @@ const backgroundTexture = textureLoader.load("palla_arancione.png", (texture) =>
 });
 pallaArancione = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: backgroundTexture, transparent: true }));
 pallaArancione.position.z = -5;
+pallaArancione.scale.set(0.7, 0.7, 0.7);
 scene.add(pallaArancione);
 
-// Pallina
 const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.NearestFilter;
@@ -91,10 +83,9 @@ const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
 });
 pallina = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: pallinaTexture, transparent: true }));
 pallina.position.z = -6;
-pallina.scale.set(0.38, 0.38, 0.38);
+pallina.scale.set(0.266, 0.266, 0.266);
 scene.add(pallina);
 
-// Caricamento occhi.gltf
 const loader = new GLTFLoader();
 loader.load(
   "occhi.gltf",
@@ -108,6 +99,7 @@ loader.load(
         });
       }
     });
+    model.scale.set(0.7, 0.7, 0.7);
     scene.add(model);
   },
   undefined,
@@ -116,8 +108,8 @@ loader.load(
   }
 );
 
-// RenderTarget custom
-const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+const dpr = window.devicePixelRatio;
+const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth * dpr, window.innerHeight * dpr, {
   minFilter: THREE.NearestFilter,
   magFilter: THREE.NearestFilter,
   format: THREE.RGBAFormat,
@@ -125,24 +117,20 @@ const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.inner
   samples: 1,
 });
 
-// Composer per effetto pixel art
 const composer = new EffectComposer(renderer, renderTarget);
 composer.addPass(new RenderPass(scene, camera));
 
 const pixelPass = new ShaderPass(PixelShader);
-pixelPass.uniforms["resolution"].value.set(window.innerWidth, window.innerHeight);
-pixelPass.uniforms["pixelSize"].value = 8.0;
+pixelPass.uniforms["resolution"].value.set(window.innerWidth * dpr, window.innerHeight * dpr);
+pixelPass.uniforms["pixelSize"].value = 0.5;
 composer.addPass(pixelPass);
 
-// Raycaster e mouse
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Valori di pixelSize ciclici
 const pixelSizes = [0.5, 12];
 let currentPixelIndex = 0;
 
-// Click sulla palla arancione
 window.addEventListener("click", (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -151,20 +139,20 @@ window.addEventListener("click", (event) => {
   const intersects = raycaster.intersectObject(pallaArancione);
 
   if (intersects.length > 0) {
-    // Cambia pixel size
-    currentPixelIndex = (currentPixelIndex + 1) % pixelSizes.length;
-    pixelPass.uniforms.pixelSize.value = pixelSizes[currentPixelIndex];
+    if (!window.pixelActivated) {
+      window.pixelActivated = true;
+    }
 
-    // Genera particelle
+    currentPixelIndex = (currentPixelIndex + 1) % pixelSizes.length;
+    if (window.pixelActivated) {
+      pixelPass.uniforms.pixelSize.value = pixelSizes[currentPixelIndex];
+    }
+
     for (let i = 0; i < 100; i++) {
-      const size = pixelPass.uniforms.pixelSize.value * 0.05; // Dimensione particella basata su pixelSize
+      const size = pixelPass.uniforms.pixelSize.value * 0.05;
       const particle = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ color: 0x59180b, side: THREE.DoubleSide }));
       particle.position.copy(intersects[0].point);
-      particle.velocity = new THREE.Vector3(
-        (Math.random() - 0.3) * 0.2, // Più lento
-        Math.random() * 0.4 + 0.1,
-        (Math.random() - 0.5) * 0.2
-      );
+      particle.velocity = new THREE.Vector3((Math.random() - 0.3) * 0.2, Math.random() * 0.4 + 0.1, (Math.random() - 0.5) * 0.2);
       particle.position.z = -7;
       scene.add(particle);
       particles.push(particle);
@@ -172,21 +160,17 @@ window.addEventListener("click", (event) => {
   }
 });
 
-// Mouse move
 window.addEventListener("mousemove", (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
-// Funzione animazione
 function animate() {
   requestAnimationFrame(animate);
 
-  // Aggiorna particelle
   particles.forEach((particle, index) => {
-    particle.velocity.y -= 0.01; // Gravità leggera
+    particle.velocity.y -= 0.03;
     particle.position.add(particle.velocity);
-
     if (particle.position.y < -20) {
       scene.remove(particle);
       particles.splice(index, 1);
@@ -197,20 +181,20 @@ function animate() {
     raycaster.setFromCamera(mouse, camera);
     const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(17));
 
-    smoothLookAt.lerp(target, 0.1);
+    smoothLookAt.lerp(target, 0.3);
 
     const temp = new THREE.Object3D();
     temp.position.copy(model.position);
     temp.lookAt(smoothLookAt);
 
     targetQuaternion.copy(temp.quaternion);
-    model.quaternion.slerp(targetQuaternion, 0.1);
+    model.quaternion.slerp(targetQuaternion, 0.3);
 
     const rotationX = THREE.MathUtils.radToDeg(model.rotation.x);
     const rotationY = THREE.MathUtils.radToDeg(model.rotation.y);
 
     const maxAngle = 30;
-    const maxShift = 11;
+    const maxShift = 7;
 
     targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift;
     targetPallinaPosition.y = (rotationX / maxAngle) * maxShift;
@@ -224,11 +208,12 @@ function animate() {
 
 animate();
 
-// Resize responsive
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
-  pixelPass.uniforms["resolution"].value.set(window.innerWidth, window.innerHeight);
+  const dpr = window.devicePixelRatio;
+  composer.setSize(window.innerWidth * dpr, window.innerHeight * dpr);
+  pixelPass.uniforms["resolution"].value.set(window.innerWidth * dpr, window.innerHeight * dpr);
 });
+
