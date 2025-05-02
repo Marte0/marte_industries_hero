@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Three.js Pixel Art Test</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #FBF8F1}
-        canvas { display: block; }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
-        "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/loaders/GLTFLoader.js",
-        "three/examples/jsm/postprocessing/EffectComposer.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/EffectComposer.js",
-        "three/examples/jsm/postprocessing/RenderPass.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/RenderPass.js",
-        "three/examples/jsm/postprocessing/ShaderPass.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/ShaderPass.js"
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
+          "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/loaders/GLTFLoader.js",
+          "three/examples/jsm/postprocessing/EffectComposer.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/EffectComposer.js",
+          "three/examples/jsm/postprocessing/RenderPass.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/RenderPass.js",
+          "three/examples/jsm/postprocessing/ShaderPass.js": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/postprocessing/ShaderPass.js"
+        }
       }
-    }
     </script>
-</head>
-<body>
-<canvas id="webgl"></canvas>
-<script type="module" src="./script.js"></script>
-</body>
+  </head>
+  <body>
+    <canvas id="webgl"></canvas>
+    <script type="module" src="./script.js"></script>
+  </body>
 </html>
