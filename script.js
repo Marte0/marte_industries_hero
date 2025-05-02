@@ -79,7 +79,7 @@ const backgroundTexture = textureLoader.load("palla_arancione.png", (texture) =>
 pallaArancione = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: backgroundTexture, transparent: true }));
 pallaArancione.position.z = -5;
 pallaArancione.scale.set(0.7, 0.7, 0.7);
-pallaArancione.position.set(10, 0, 0);
+pallaArancione.position.set(20, 0, 0);
 scene.add(pallaArancione);
 
 const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
@@ -91,7 +91,7 @@ const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
 pallina = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: pallinaTexture, transparent: true }));
 pallina.position.z = -6;
 pallina.scale.set(0.266, 0.266, 0.266);
-pallina.position.set(10, 0, -5);
+pallina.position.set(20, 0, -5);
 scene.add(pallina);
 
 const loader = new GLTFLoader();
@@ -108,7 +108,7 @@ loader.load(
       }
     });
     model.scale.set(1, 1, 1);
-    model.position.set(10, 0, 0);
+    model.position.set(20, 0, 0);
     scene.add(model);
   },
   undefined,
@@ -205,7 +205,7 @@ function animate() {
     const maxAngle = 30;
     const maxShift = 4;
 
-    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + 10;
+    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + 20;
     targetPallinaPosition.y = (rotationX / maxAngle) * maxShift;
 
     pallina.position.x = lerp(pallina.position.x, targetPallinaPosition.x, 0.1);
