@@ -188,7 +188,7 @@ function animate() {
 
   if (model) {
     raycaster.setFromCamera(mouse, camera);
-    const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.1));
+    const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.01));
 
     smoothLookAt.lerp(target, 0.3);
 
@@ -203,7 +203,7 @@ function animate() {
     const rotationY = THREE.MathUtils.radToDeg(model.rotation.y);
 
     const maxAngle = 30;
-    const maxShift = 4;
+    const maxShift = 6;
 
     targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + 20;
     targetPallinaPosition.y = (rotationX / maxAngle) * maxShift;
