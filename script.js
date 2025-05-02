@@ -4,10 +4,12 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 
+// Funzione di interpolazione lineare
 function lerp(start, end, t) {
   return start + (end - start) * t;
 }
 
+// Shader per effetto pixelato
 const PixelShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -43,7 +45,11 @@ const PixelShader = {
 };
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+// Parametri per la camera ortogonale
+const frustumSize = 40;
+let aspect = window.innerWidth / window.innerHeight;
+const camera = new THREE.OrthographicCamera((-frustumSize * aspect) / 2, (frustumSize * aspect) / 2, frustumSize / 2, -frustumSize / 2, 0.1, 1000);
 camera.position.z = 25;
 
 const renderer = new THREE.WebGLRenderer({
@@ -73,6 +79,7 @@ const backgroundTexture = textureLoader.load("palla_arancione.png", (texture) =>
 pallaArancione = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: backgroundTexture, transparent: true }));
 pallaArancione.position.z = -5;
 pallaArancione.scale.set(0.7, 0.7, 0.7);
+pallaArancione.position.set(10, 0, 0);
 scene.add(pallaArancione);
 
 const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
@@ -84,6 +91,7 @@ const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
 pallina = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: pallinaTexture, transparent: true }));
 pallina.position.z = -6;
 pallina.scale.set(0.266, 0.266, 0.266);
+pallina.position.set(10, 0, -5);
 scene.add(pallina);
 
 const loader = new GLTFLoader();
@@ -99,7 +107,8 @@ loader.load(
         });
       }
     });
-    model.scale.set(0.7, 0.7, 0.7);
+    model.scale.set(1, 1, 1);
+    model.position.set(10, 0, 0);
     scene.add(model);
   },
   undefined,
@@ -194,9 +203,9 @@ function animate() {
     const rotationY = THREE.MathUtils.radToDeg(model.rotation.y);
 
     const maxAngle = 30;
-    const maxShift = 7;
+    const maxShift = 4;
 
-    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift;
+    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + 10;
     targetPallinaPosition.y = (rotationX / maxAngle) * maxShift;
 
     pallina.position.x = lerp(pallina.position.x, targetPallinaPosition.x, 0.1);
@@ -209,11 +218,15 @@ function animate() {
 animate();
 
 window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  aspect = window.innerWidth / window.innerHeight;
+  camera.left = (-frustumSize * aspect) / 2;
+  camera.right = (frustumSize * aspect) / 2;
+  camera.top = frustumSize / 2;
+  camera.bottom = -frustumSize / 2;
   camera.updateProjectionMatrix();
+
   renderer.setSize(window.innerWidth, window.innerHeight);
   const dpr = window.devicePixelRatio;
   composer.setSize(window.innerWidth * dpr, window.innerHeight * dpr);
   pixelPass.uniforms["resolution"].value.set(window.innerWidth * dpr, window.innerHeight * dpr);
 });
-
