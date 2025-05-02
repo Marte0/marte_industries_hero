@@ -188,7 +188,7 @@ function animate() {
 
   if (model) {
     raycaster.setFromCamera(mouse, camera);
-    const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(17));
+    const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.1));
 
     smoothLookAt.lerp(target, 0.3);
 
