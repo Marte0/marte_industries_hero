@@ -45,8 +45,6 @@ const PixelShader = {
 };
 
 const scene = new THREE.Scene();
-
-// Parametri per la camera ortogonale
 const frustumSize = 40;
 let aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera((-frustumSize * aspect) / 2, (frustumSize * aspect) / 2, frustumSize / 2, -frustumSize / 2, 0.1, 1000);
@@ -79,7 +77,6 @@ const backgroundTexture = textureLoader.load("palla_arancione.png", (texture) =>
 pallaArancione = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: backgroundTexture, transparent: true }));
 pallaArancione.position.z = -5;
 pallaArancione.scale.set(0.7, 0.7, 0.7);
-pallaArancione.position.set(20, 0, 0);
 scene.add(pallaArancione);
 
 const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
@@ -91,7 +88,6 @@ const pallinaTexture = textureLoader.load("pallina.png", (texture) => {
 pallina = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ map: pallinaTexture, transparent: true }));
 pallina.position.z = -6;
 pallina.scale.set(0.266, 0.266, 0.266);
-pallina.position.set(20, 0, -5);
 scene.add(pallina);
 
 const loader = new GLTFLoader();
@@ -108,14 +104,30 @@ loader.load(
       }
     });
     model.scale.set(1, 1, 1);
-    model.position.set(20, 0, 0);
     scene.add(model);
+    updatePositions(); // ← Applica posizioni appena caricato
   },
   undefined,
   (error) => {
     console.error("Errore caricamento modello:", error);
   }
 );
+
+// Funzione per aggiornare le posizioni in base alla dimensione dello schermo
+function updatePositions() {
+  const isMobile = window.innerWidth < 767;
+
+  if (pallaArancione) pallaArancione.position.set(isMobile ? 0 : 20, 0, 0); //cambiare
+  if (pallina) pallina.position.set(isMobile ? 0 : 20, 0, -5); //cambiare
+  if (model) model.position.set(isMobile ? 0 : 20, 0, 0); //cambiare
+
+  const maxAngle = 30;
+  const maxShift = 6;
+  const rotationY = THREE.MathUtils.radToDeg(model?.rotation?.y || 0);
+  targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + (isMobile ? 0 : 20); //cambiare
+}
+
+updatePositions(); // ← Applica posizioni iniziali
 
 const dpr = window.devicePixelRatio;
 const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth * dpr, window.innerHeight * dpr, {
@@ -189,7 +201,6 @@ function animate() {
   if (model) {
     raycaster.setFromCamera(mouse, camera);
     const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.01));
-
     smoothLookAt.lerp(target, 0.3);
 
     const temp = new THREE.Object3D();
@@ -205,7 +216,8 @@ function animate() {
     const maxAngle = 30;
     const maxShift = 6;
 
-    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + 20;
+    const isMobile = window.innerWidth < 767;
+    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + (isMobile ? 0 : 20); //cambiare
     targetPallinaPosition.y = (rotationX / maxAngle) * maxShift;
 
     pallina.position.x = lerp(pallina.position.x, targetPallinaPosition.x, 0.1);
@@ -218,6 +230,7 @@ function animate() {
 animate();
 
 window.addEventListener("resize", () => {
+  console.log(window.innerWidth);
   aspect = window.innerWidth / window.innerHeight;
   camera.left = (-frustumSize * aspect) / 2;
   camera.right = (frustumSize * aspect) / 2;
@@ -229,4 +242,6 @@ window.addEventListener("resize", () => {
   const dpr = window.devicePixelRatio;
   composer.setSize(window.innerWidth * dpr, window.innerHeight * dpr);
   pixelPass.uniforms["resolution"].value.set(window.innerWidth * dpr, window.innerHeight * dpr);
+
+  updatePositions(); // ← aggiorna posizione oggetti
 });
