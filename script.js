@@ -77,7 +77,7 @@ function getRandomNDC() {
 
 function startMobileTargeting() {
   if (mobileTargetInterval) clearInterval(mobileTargetInterval);
-  if (window.innerWidth < 767) {
+  if (window.innerWidth < 1024) {
     mobileTargetInterval = setInterval(() => {
       const ndc = getRandomNDC();
       raycaster.setFromCamera(ndc, camera);
@@ -135,7 +135,7 @@ loader.load(
 );
 
 function updatePositions() {
-  const isMobile = window.innerWidth < 767;
+  const isMobile = window.innerWidth < 1024;
 
   if (pallaArancione) pallaArancione.position.set(isMobile ? 0 : 20, 0, 0);
   if (pallina) pallina.position.set(isMobile ? 0 : 20, 0, -5);
@@ -236,7 +236,7 @@ function animate() {
 
   if (model) {
     let target;
-    const isMobile = window.innerWidth < 767;
+    const isMobile = window.innerWidth < 1024;
 
     if (isMobile) {
       target = mobileTarget;
