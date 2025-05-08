@@ -4,12 +4,10 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 
-// Funzione di interpolazione lineare
 function lerp(start, end, t) {
   return start + (end - start) * t;
 }
 
-// Shader per effetto pixelato
 const PixelShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -66,6 +64,26 @@ let pallina, pallaArancione;
 let targetPallinaPosition = new THREE.Vector3();
 let particles = [];
 
+let mobileTarget = new THREE.Vector3();
+let mobileTargetInterval;
+
+function getRandomNDC() {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 1; // Più lontano dal centro
+  return new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius);
+}
+
+function startMobileTargeting() {
+  if (mobileTargetInterval) clearInterval(mobileTargetInterval);
+  if (window.innerWidth < 767) {
+    mobileTargetInterval = setInterval(() => {
+      const ndc = getRandomNDC();
+      raycaster.setFromCamera(ndc, camera);
+      mobileTarget.copy(raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.01)));
+    }, Math.random() * (5000 - 1500) + 1500);
+  }
+}
+
 const textureLoader = new THREE.TextureLoader();
 
 const backgroundTexture = textureLoader.load("palla_arancione.png", (texture) => {
@@ -105,7 +123,8 @@ loader.load(
     });
     model.scale.set(1, 1, 1);
     scene.add(model);
-    updatePositions(); // ← Applica posizioni appena caricato
+    updatePositions();
+    startMobileTargeting();
   },
   undefined,
   (error) => {
@@ -113,21 +132,21 @@ loader.load(
   }
 );
 
-// Funzione per aggiornare le posizioni in base alla dimensione dello schermo
 function updatePositions() {
   const isMobile = window.innerWidth < 767;
 
-  if (pallaArancione) pallaArancione.position.set(isMobile ? 0 : 20, 0, 0); //cambiare
-  if (pallina) pallina.position.set(isMobile ? 0 : 20, 0, -5); //cambiare
-  if (model) model.position.set(isMobile ? 0 : 20, 0, 0); //cambiare
+  if (pallaArancione) pallaArancione.position.set(isMobile ? 0 : 20, 0, 0);
+  if (pallina) pallina.position.set(isMobile ? 0 : 20, 0, -5);
+  if (model) model.position.set(isMobile ? 0 : 20, 0, 0);
 
   const maxAngle = 30;
   const maxShift = 6;
   const rotationY = THREE.MathUtils.radToDeg(model?.rotation?.y || 0);
-  targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + (isMobile ? 0 : 20); //cambiare
+  targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + (isMobile ? 0 : 20);
 }
 
-updatePositions(); // ← Applica posizioni iniziali
+updatePositions();
+startMobileTargeting();
 
 const dpr = window.devicePixelRatio;
 const renderTarget = new THREE.WebGLRenderTarget(window.innerWidth * dpr, window.innerHeight * dpr, {
@@ -199,9 +218,17 @@ function animate() {
   });
 
   if (model) {
-    raycaster.setFromCamera(mouse, camera);
-    const target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.01));
-    smoothLookAt.lerp(target, 0.3);
+    let target;
+    const isMobile = window.innerWidth < 767;
+
+    if (isMobile) {
+      target = mobileTarget;
+    } else {
+      raycaster.setFromCamera(mouse, camera);
+      target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.01));
+    }
+
+    smoothLookAt.lerp(target, 0.07); // movimento più lento
 
     const temp = new THREE.Object3D();
     temp.position.copy(model.position);
@@ -212,12 +239,10 @@ function animate() {
 
     const rotationX = THREE.MathUtils.radToDeg(model.rotation.x);
     const rotationY = THREE.MathUtils.radToDeg(model.rotation.y);
-
     const maxAngle = 30;
     const maxShift = 6;
 
-    const isMobile = window.innerWidth < 767;
-    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + (isMobile ? 0 : 20); //cambiare
+    targetPallinaPosition.x = -(rotationY / maxAngle) * maxShift + (isMobile ? 0 : 20);
     targetPallinaPosition.y = (rotationX / maxAngle) * maxShift;
 
     pallina.position.x = lerp(pallina.position.x, targetPallinaPosition.x, 0.1);
@@ -230,7 +255,6 @@ function animate() {
 animate();
 
 window.addEventListener("resize", () => {
-  console.log(window.innerWidth);
   aspect = window.innerWidth / window.innerHeight;
   camera.left = (-frustumSize * aspect) / 2;
   camera.right = (frustumSize * aspect) / 2;
@@ -243,5 +267,6 @@ window.addEventListener("resize", () => {
   composer.setSize(window.innerWidth * dpr, window.innerHeight * dpr);
   pixelPass.uniforms["resolution"].value.set(window.innerWidth * dpr, window.innerHeight * dpr);
 
-  updatePositions(); // ← aggiorna posizione oggetti
+  updatePositions();
+  startMobileTargeting();
 });
