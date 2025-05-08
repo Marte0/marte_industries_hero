@@ -66,10 +66,12 @@ let particles = [];
 
 let mobileTarget = new THREE.Vector3();
 let mobileTargetInterval;
+let isHovered = false;
+let pallaScaleTarget = 0.7;
 
 function getRandomNDC() {
   const angle = Math.random() * Math.PI * 2;
-  const radius = 1; // Più lontano dal centro
+  const radius = 1;
   return new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius);
 }
 
@@ -188,12 +190,19 @@ window.addEventListener("click", (event) => {
       pixelPass.uniforms.pixelSize.value = pixelSizes[currentPixelIndex];
     }
 
-    for (let i = 0; i < 100; i++) {
-      const size = pixelPass.uniforms.pixelSize.value * 0.05;
+    const center = intersects[0].object.position.clone();
+    const radius = 7;
+    const count = 75;
+
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const x = center.x + Math.cos(angle) * radius;
+      const y = center.y + Math.sin(angle) * radius;
+
+      const size = pixelPass.uniforms.pixelSize.value * 0.04;
       const particle = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ color: 0x59180b, side: THREE.DoubleSide }));
-      particle.position.copy(intersects[0].point);
-      particle.velocity = new THREE.Vector3((Math.random() - 0.3) * 0.2, Math.random() * 0.4 + 0.1, (Math.random() - 0.5) * 0.2);
-      particle.position.z = -7;
+      particle.position.set(x, y, 7);
+      particle.velocity = new THREE.Vector3((Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.2);
       scene.add(particle);
       particles.push(particle);
     }
@@ -203,6 +212,10 @@ window.addEventListener("click", (event) => {
 window.addEventListener("mousemove", (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObject(pallaArancione);
+  isHovered = intersects.length > 0;
 });
 
 function animate() {
@@ -217,6 +230,10 @@ function animate() {
     }
   });
 
+  const targetScale = isHovered ? 0.8 : 0.7;
+  pallaScaleTarget = lerp(pallaScaleTarget, targetScale, 0.1);
+  pallaArancione.scale.set(pallaScaleTarget, pallaScaleTarget, pallaScaleTarget);
+
   if (model) {
     let target;
     const isMobile = window.innerWidth < 767;
@@ -228,7 +245,7 @@ function animate() {
       target = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(0.01));
     }
 
-    smoothLookAt.lerp(target, 0.07); // movimento più lento
+    smoothLookAt.lerp(target, 0.07);
 
     const temp = new THREE.Object3D();
     temp.position.copy(model.position);
